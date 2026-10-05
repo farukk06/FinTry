@@ -7,6 +7,7 @@ import com.fintry.repository.VirtualAccountRepository;
 import org.springframework.stereotype.Service;
 import com.fintry.exception.BusinessRuleException;
 import com.fintry.exception.ResourceNotFoundException;
+import com.fintry.dto.VirtualAccountResponse;
 
 import java.math.BigDecimal;
 
@@ -21,7 +22,7 @@ public class VirtualAccountService {
         this.userRepository = userRepository;
     }
 
-    public VirtualAccount createVirtualAccount(Long userId, BigDecimal balance) {
+    public VirtualAccountResponse createVirtualAccount(Long userId, BigDecimal balance) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -35,11 +36,25 @@ public class VirtualAccountService {
                 .user(user)
                 .build();
 
-        return virtualAccountRepository.save(virtualAccount);
+        VirtualAccount savedAccount =
+                virtualAccountRepository.save(virtualAccount);
+
+        return toResponse(savedAccount);
     }
 
-    public VirtualAccount getByUserId(Long userId) {
-        return virtualAccountRepository.findByUserId(userId)
+    public VirtualAccountResponse getByUserId(Long userId) {
+
+        VirtualAccount account = virtualAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
+
+        return toResponse(account);
+    }
+
+    private VirtualAccountResponse toResponse(VirtualAccount account) {
+        return VirtualAccountResponse.builder()
+                .id(account.getId())
+                .userId(account.getUser().getId())
+                .balance(account.getBalance())
+                .build();
     }
 }

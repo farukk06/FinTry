@@ -1,6 +1,8 @@
 package com.fintry.controller;
 
-import com.fintry.entity.Instrument;
+import com.fintry.dto.CreateInstrumentRequest;
+import com.fintry.dto.InstrumentResponse;
+import jakarta.validation.Valid;
 import com.fintry.service.InstrumentService;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,17 +20,22 @@ public class InstrumentController {
     }
 
     @PostMapping
-    public Instrument createInstrument(@RequestBody Instrument instrument) {
-        return instrumentService.createInstrument(instrument);
+    public InstrumentResponse createInstrument(
+            @Valid @RequestBody CreateInstrumentRequest request) {
+
+        return instrumentService.createInstrument(request);
     }
 
     @GetMapping
-    public List<Instrument> getAllInstruments() {
+    public List<InstrumentResponse> getAllInstruments() {
         return instrumentService.getAllInstruments();
     }
 
     @PutMapping("/{id}/price")
-    public Instrument updateInstrumentPrice(@PathVariable Long id, @RequestParam BigDecimal price) {
+    public InstrumentResponse updateInstrumentPrice(
+            @PathVariable Long id,
+            @RequestParam BigDecimal price) {
+
         return instrumentService.updateInstrumentPrice(id, price);
     }
 }

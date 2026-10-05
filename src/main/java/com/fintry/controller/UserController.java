@@ -1,6 +1,8 @@
 package com.fintry.controller;
 
-import com.fintry.entity.User;
+import com.fintry.dto.CreateUserRequest;
+import com.fintry.dto.UserResponse;
+import jakarta.validation.Valid;
 import com.fintry.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,12 +19,12 @@ public class UserController {
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public UserResponse createUser(@Valid @RequestBody CreateUserRequest request) {
+        return userService.createUser(request);
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         return userService.getAllUsers();
     }
 }

@@ -9,6 +9,7 @@ import com.fintry.entity.TransactionType;
 import com.fintry.exception.ResourceNotFoundException;
 import com.fintry.exception.InsufficientBalanceException;
 import com.fintry.exception.InsufficientAssetException;
+import com.fintry.dto.TransactionResponse;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,7 +38,7 @@ public class TransactionService {
     }
 
     @Transactional
-    public Transaction buy(TradeRequest request) {
+    public TransactionResponse buy(TradeRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -97,11 +98,13 @@ public class TransactionService {
         portfolioAssetRepository.save(asset);
         virtualAccountRepository.save(account);
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return toResponse(savedTransaction);
     }
 
     @Transactional
-    public Transaction sell(TradeRequest request) {
+    public TransactionResponse sell(TradeRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -145,10 +148,27 @@ public class TransactionService {
                 .instrument(instrument)
                 .build();
 
-        return transactionRepository.save(transaction);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return toResponse(savedTransaction);
     }
 
-    public List<Transaction> getTransactionsByUserId(Long userId) {
-        return transactionRepository.findByUserId(userId);
+    public List<TransactionResponse> getTransactionsByUserId(Long userId) {
+        return transactionRepository.findByUserId(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+    private TransactionResponse toResponse(Transaction transaction) {
+        return TransactionResponse.builder()
+                .id(transaction.getId())
+                .type(transaction.getType())
+                .quantity(transaction.getQuantity())
+                .price(transaction.getPrice())
+                .totalAmount(transaction.getTotalAmount())
+                .transactionTime(transaction.getTransactionTime())
+                .instrumentId(transaction.getInstrument().getId())
+                .instrumentSymbol(transaction.getInstrument().getSymbol())
+                .build();
     }
 }

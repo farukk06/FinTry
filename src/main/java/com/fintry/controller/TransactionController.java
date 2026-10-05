@@ -1,7 +1,7 @@
 package com.fintry.controller;
 
 import com.fintry.dto.TradeRequest;
-import com.fintry.entity.Transaction;
+import com.fintry.dto.TransactionResponse;
 import com.fintry.service.TransactionService;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -19,17 +19,17 @@ public class TransactionController {
     }
 
     @PostMapping("/buy")
-    public Transaction buy(@Valid @RequestBody TradeRequest request) {
+    public TransactionResponse buy(@Valid @RequestBody TradeRequest request) {
         return transactionService.buy(request);
     }
 
     @PostMapping("/sell")
-    public Transaction sell(@Valid @RequestBody TradeRequest request) {
+    public TransactionResponse sell(@Valid @RequestBody TradeRequest request) {
         return transactionService.sell(request);
     }
 
     @GetMapping("/user/{userId}")
-    public List<Transaction> getTransactionsByUserId(@PathVariable Long userId) {
+    public List<TransactionResponse> getTransactionsByUserId(@PathVariable Long userId) {
         return transactionService.getTransactionsByUserId(userId);
     }
 }

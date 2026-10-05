@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.fintry.exception.BusinessRuleException;
 import com.fintry.exception.ResourceNotFoundException;
+import com.fintry.dto.CreateBalanceRequest;
+import com.fintry.dto.BalanceRequestResponse;
 
 import java.time.LocalDateTime;
 
@@ -20,15 +22,23 @@ public class BalanceRequestService {
     private final BalanceRequestRepository balanceRequestRepository;
     private final VirtualAccountRepository virtualAccountRepository;
 
-    public BalanceRequest createRequest(BalanceRequest request) {
-        request.setStatus(BalanceRequestStatus.PENDING);
-        request.setCreatedAt(LocalDateTime.now());
+    public BalanceRequestResponse createRequest(CreateBalanceRequest request) {
 
-        return balanceRequestRepository.save(request);
+        BalanceRequest balanceRequest = BalanceRequest.builder()
+                .userId(request.getUserId())
+                .requestedAmount(request.getRequestedAmount())
+                .status(BalanceRequestStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        BalanceRequest savedRequest =
+                balanceRequestRepository.save(balanceRequest);
+
+        return toResponse(savedRequest);
     }
 
     @Transactional
-    public BalanceRequest approveRequest(Long requestId) {
+    public BalanceRequestResponse approveRequest(Long requestId) {
         BalanceRequest request = balanceRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Talep bulunamadı"));
 
@@ -48,6 +58,17 @@ public class BalanceRequestService {
 
         virtualAccountRepository.save(account);
 
-        return balanceRequestRepository.save(request);
+        BalanceRequest savedRequest = balanceRequestRepository.save(request);
+
+        return toResponse(savedRequest);
+    }
+    private BalanceRequestResponse toResponse(BalanceRequest request) {
+        return BalanceRequestResponse.builder()
+                .id(request.getId())
+                .userId(request.getUserId())
+                .requestedAmount(request.getRequestedAmount())
+                .status(request.getStatus())
+                .createdAt(request.getCreatedAt())
+                .build();
     }
 }
