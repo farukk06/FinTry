@@ -8,6 +8,8 @@ import com.fintry.repository.BalanceRequestRepository;
 import com.fintry.repository.VirtualAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.fintry.exception.BusinessRuleException;
+import com.fintry.exception.ResourceNotFoundException;
 
 import java.time.LocalDateTime;
 
@@ -28,15 +30,15 @@ public class BalanceRequestService {
     @Transactional
     public BalanceRequest approveRequest(Long requestId) {
         BalanceRequest request = balanceRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Talep bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Talep bulunamadı"));
 
         if (request.getStatus() != BalanceRequestStatus.PENDING) {
-            throw new RuntimeException("Bu talep zaten işlenmiş");
+            throw new BusinessRuleException("Bu talep zaten işlenmiş");
         }
 
         VirtualAccount account = virtualAccountRepository
                 .findByUserId(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Virtual account bulunamadı"));
+                .orElseThrow(() -> new ResourceNotFoundException("Virtual account bulunamadı"));
 
         account.setBalance(
                 account.getBalance().add(request.getRequestedAmount())

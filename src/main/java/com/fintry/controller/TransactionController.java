@@ -4,6 +4,7 @@ import com.fintry.dto.TradeRequest;
 import com.fintry.entity.Transaction;
 import com.fintry.service.TransactionService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,12 +19,12 @@ public class TransactionController {
     }
 
     @PostMapping("/buy")
-    public Transaction buy(@RequestBody TradeRequest request) {
+    public Transaction buy(@Valid @RequestBody TradeRequest request) {
         return transactionService.buy(request);
     }
 
     @PostMapping("/sell")
-    public Transaction sell(@RequestBody TradeRequest request) {
+    public Transaction sell(@Valid @RequestBody TradeRequest request) {
         return transactionService.sell(request);
     }
 

@@ -3,6 +3,7 @@ package com.fintry.service;
 import com.fintry.entity.Instrument;
 import com.fintry.repository.InstrumentRepository;
 import org.springframework.stereotype.Service;
+import com.fintry.exception.ResourceNotFoundException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,7 +27,7 @@ public class InstrumentService {
 
     public Instrument updateInstrumentPrice(Long id, BigDecimal newPrice) {
         Instrument instrument = instrumentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Instrument not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 
         instrument.setPrice(newPrice);
 

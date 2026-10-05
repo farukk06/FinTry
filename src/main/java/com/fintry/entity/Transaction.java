@@ -19,8 +19,8 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String type; // BUY veya SELL
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
 
     @Column(nullable = false)
     private BigDecimal quantity;

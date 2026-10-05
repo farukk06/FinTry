@@ -5,6 +5,10 @@ import com.fintry.entity.*;
 import com.fintry.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import com.fintry.entity.TransactionType;
+import com.fintry.exception.ResourceNotFoundException;
+import com.fintry.exception.InsufficientBalanceException;
+import com.fintry.exception.InsufficientAssetException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,20 +39,20 @@ public class TransactionService {
     @Transactional
     public Transaction buy(TradeRequest request) {
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
-                .orElseThrow(() -> new RuntimeException("Instrument not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 
         VirtualAccount account = virtualAccountRepository.findByUserId(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Virtual account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
 
         BigDecimal quantity = request.getQuantity();
         BigDecimal price = instrument.getPrice();
         BigDecimal totalAmount = price.multiply(quantity);
 
         if (account.getBalance().compareTo(totalAmount) < 0) {
-            throw new RuntimeException("Insufficient balance");
+            throw new InsufficientBalanceException("Insufficient balance");
         }
 
         account.setBalance(account.getBalance().subtract(totalAmount));
@@ -81,7 +85,7 @@ public class TransactionService {
         }
 
         Transaction transaction = Transaction.builder()
-                .type("BUY")
+                .type(TransactionType.BUY)
                 .quantity(quantity)
                 .price(price)
                 .totalAmount(totalAmount)
@@ -99,23 +103,23 @@ public class TransactionService {
     @Transactional
     public Transaction sell(TradeRequest request) {
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
-                .orElseThrow(() -> new RuntimeException("Instrument not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 
         VirtualAccount account = virtualAccountRepository.findByUserId(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("Virtual account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
 
         PortfolioAsset asset = portfolioAssetRepository
                 .findByUserIdAndInstrumentId(request.getUserId(), request.getInstrumentId())
-                .orElseThrow(() -> new RuntimeException("Portfolio asset not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Portfolio asset not found"));
 
         BigDecimal quantity = request.getQuantity();
         BigDecimal price = instrument.getPrice();
 
         if (asset.getQuantity().compareTo(quantity) < 0) {
-            throw new RuntimeException("Insufficient asset quantity");
+            throw new InsufficientAssetException("Insufficient asset quantity");
         }
 
         BigDecimal totalAmount = price.multiply(quantity);
@@ -132,7 +136,7 @@ public class TransactionService {
         virtualAccountRepository.save(account);
 
         Transaction transaction = Transaction.builder()
-                .type("SELL")
+                .type(TransactionType.SELL)
                 .quantity(quantity)
                 .price(price)
                 .totalAmount(totalAmount)
