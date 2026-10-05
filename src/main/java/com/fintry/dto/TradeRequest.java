@@ -2,6 +2,8 @@ package com.fintry.dto;
 
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -10,5 +12,5 @@ import lombok.*;
 public class TradeRequest {
     private Long userId;
     private Long instrumentId;
-    private Double quantity;
+    private BigDecimal quantity;
 }

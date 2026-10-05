@@ -3,6 +3,7 @@ package com.fintry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,13 +23,13 @@ public class Transaction {
     private String type; // BUY veya SELL
 
     @Column(nullable = false)
-    private Double quantity;
+    private BigDecimal quantity;
 
     @Column(nullable = false)
-    private Double price;
+    private BigDecimal price;
 
     @Column(name = "total_amount", nullable = false)
-    private Double totalAmount;
+    private BigDecimal totalAmount;
 
     @Column(name = "transaction_time", nullable = false)
     private LocalDateTime transactionTime;

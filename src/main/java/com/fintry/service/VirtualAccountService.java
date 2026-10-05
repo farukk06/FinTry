@@ -6,6 +6,8 @@ import com.fintry.repository.UserRepository;
 import com.fintry.repository.VirtualAccountRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class VirtualAccountService {
 
@@ -17,7 +19,7 @@ public class VirtualAccountService {
         this.userRepository = userRepository;
     }
 
-    public VirtualAccount createVirtualAccount(Long userId, Double balance) {
+    public VirtualAccount createVirtualAccount(Long userId, BigDecimal balance) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

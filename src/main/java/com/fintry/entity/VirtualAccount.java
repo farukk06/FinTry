@@ -3,6 +3,8 @@ package com.fintry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "virtual_accounts")
 @Getter
@@ -17,7 +19,7 @@ public class VirtualAccount {
     private Long id;
 
     @Column(nullable = false)
-    private Double balance;
+    private BigDecimal balance;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)

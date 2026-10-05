@@ -1,8 +1,11 @@
 package com.fintry.controller;
 
+import com.fintry.entity.BalanceRequest;
 import com.fintry.entity.VirtualAccount;
 import com.fintry.service.VirtualAccountService;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/accounts")
@@ -15,7 +18,7 @@ public class VirtualAccountController {
     }
 
     @PostMapping("/user/{userId}")
-    public VirtualAccount createVirtualAccount(@PathVariable Long userId, @RequestParam Double balance) {
+    public VirtualAccount createVirtualAccount(@PathVariable Long userId, @RequestParam BigDecimal balance) {
         return virtualAccountService.createVirtualAccount(userId, balance);
     }
 

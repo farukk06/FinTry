@@ -1,5 +1,6 @@
 package com.fintry.service;
 
+import com.fintry.entity.Role;
 import com.fintry.entity.User;
 import com.fintry.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,10 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
+
         return userRepository.save(user);
     }
 

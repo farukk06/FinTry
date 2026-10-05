@@ -4,6 +4,7 @@ import com.fintry.entity.Instrument;
 import com.fintry.service.InstrumentService;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -27,7 +28,7 @@ public class InstrumentController {
     }
 
     @PutMapping("/{id}/price")
-    public Instrument updateInstrumentPrice(@PathVariable Long id, @RequestParam Double price) {
+    public Instrument updateInstrumentPrice(@PathVariable Long id, @RequestParam BigDecimal price) {
         return instrumentService.updateInstrumentPrice(id, price);
     }
 }

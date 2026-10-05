@@ -2,6 +2,8 @@ package com.fintry.dto;
 
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -12,10 +14,10 @@ public class PortfolioResponse {
     private String symbol;
     private String name;
 
-    private Double quantity;
-    private Double averagePrice;
-    private Double currentPrice;
+    private BigDecimal quantity;
+    private BigDecimal averagePrice;
+    private BigDecimal currentPrice;
 
-    private Double totalValue;
-    private Double profitLoss;
+    private BigDecimal totalValue;
+    private BigDecimal profitLoss;
 }

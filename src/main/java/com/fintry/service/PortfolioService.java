@@ -5,6 +5,7 @@ import com.fintry.entity.PortfolioAsset;
 import com.fintry.repository.PortfolioAssetRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,16 +20,22 @@ public class PortfolioService {
 
     public List<PortfolioResponse> getUserPortfolio(Long userId) {
 
-        List<PortfolioAsset> assets = portfolioAssetRepository.findByUserId(userId);
+        List<PortfolioAsset> assets =
+                portfolioAssetRepository.findByUserId(userId);
 
         return assets.stream().map(asset -> {
 
-            double currentPrice = asset.getInstrument().getPrice();
-            double quantity = asset.getQuantity();
-            double averagePrice = asset.getAveragePrice();
+            BigDecimal currentPrice = asset.getInstrument().getPrice();
+            BigDecimal quantity = asset.getQuantity();
+            BigDecimal averagePrice = asset.getAveragePrice();
 
-            double totalValue = quantity * currentPrice;
-            double profitLoss = (currentPrice - averagePrice) * quantity;
+            BigDecimal totalValue =
+                    quantity.multiply(currentPrice);
+
+            BigDecimal profitLoss =
+                    currentPrice
+                            .subtract(averagePrice)
+                            .multiply(quantity);
 
             return PortfolioResponse.builder()
                     .symbol(asset.getInstrument().getSymbol())

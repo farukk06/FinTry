@@ -3,26 +3,28 @@ package com.fintry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "users")
+@Table(name = "balance_requests")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class BalanceRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String username;
+    private Long userId;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    private BigDecimal requestedAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role;
+    private BalanceRequestStatus status;
+
+    private LocalDateTime createdAt;
 }

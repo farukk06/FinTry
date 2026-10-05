@@ -3,6 +3,8 @@ package com.fintry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "instruments")
 @Getter
@@ -26,5 +28,5 @@ public class Instrument {
     private String type; // STOCK, FOREX, GOLD
 
     @Column(nullable = false)
-    private Double price; // güncel fiyat
+    private BigDecimal price; // güncel fiyat
 }

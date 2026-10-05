@@ -3,6 +3,8 @@ package com.fintry.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "portfolio_assets")
 @Getter
@@ -17,10 +19,10 @@ public class PortfolioAsset {
     private Long id;
 
     @Column(nullable = false)
-    private Double quantity;
+    private BigDecimal quantity;
 
     @Column(name = "average_price", nullable = false)
-    private Double averagePrice;
+    private BigDecimal averagePrice;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
