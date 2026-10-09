@@ -25,4 +25,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean enabled = false;
 }

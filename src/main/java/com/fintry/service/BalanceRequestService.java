@@ -26,6 +26,7 @@ public class BalanceRequestService {
     private final FinancialLocks financialLocks;
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#request.userId)")
     public BalanceRequestResponse createRequest(CreateBalanceRequest request) {
         if (request.getUserId() == null) {
             throw new ResourceNotFoundException("User not found");
@@ -47,6 +48,7 @@ public class BalanceRequestService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public BalanceRequestResponse approveRequest(Long requestId) {
         // Global order: request (approval only) -> account -> portfolio. Never reverse it.
         financialLocks.configureTimeout();
@@ -72,6 +74,14 @@ public class BalanceRequestService {
         BalanceRequest savedRequest = balanceRequestRepository.save(request);
 
         return toResponse(savedRequest);
+    }
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#userId)")
+    public java.util.List<BalanceRequestResponse> getByUserId(Long userId) {
+        return balanceRequestRepository.findByUserId(userId).stream().map(this::toResponse).toList();
+    }
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
+    public java.util.List<BalanceRequestResponse> pendingRequests() {
+        return balanceRequestRepository.findByStatus(BalanceRequestStatus.PENDING).stream().map(this::toResponse).toList();
     }
     private BalanceRequestResponse toResponse(BalanceRequest request) {
         return BalanceRequestResponse.builder()
