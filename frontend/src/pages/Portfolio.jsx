@@ -1,120 +1,43 @@
-import { useEffect, useState } from "react";
-
-function Portfolio() {
-    const [portfolio, setPortfolio] = useState([]);
-
-    const formatCurrency = (value) => {
-        return (
-            Number(value).toLocaleString("tr-TR", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            }) + " ₺"
-        );
-    };
-
-    const totalValue = portfolio.reduce(
-        (sum, item) => sum + item.totalValue,
-        0
-    );
-
-    const totalProfitLoss = portfolio.reduce(
-        (sum, item) => sum + item.profitLoss,
-        0
-    );
-
-    useEffect(() => {
-        fetch("http://localhost:8080/portfolio/user/1")
-            .then((response) => response.json())
-            .then((data) => setPortfolio(data))
-            .catch((error) => console.error(error));
-    }, []);
-
-    return (
-        <>
-            <div className="page-head">
-                <div>
-                    <h1>Portföyüm</h1>
-                    <p>Kullanıcının sanal yatırım varlıkları ve kâr/zarar özeti</p>
-                </div>
-                <span>Para birimi: TRY</span>
-            </div>
-
-            <div className="portfolio-kpis">
-                <div className="portfolio-kpi">
-                    <h3>Portföy Değeri</h3>
-                    <p>{formatCurrency(totalValue)}</p>
-                </div>
-
-                <div className="portfolio-kpi">
-                    <h3>Toplam Kâr / Zarar</h3>
-                    <p className={totalProfitLoss >= 0 ? "profit" : "loss"}>
-                        {formatCurrency(totalProfitLoss)}
-                    </p>
-                </div>
-
-                <div className="portfolio-kpi">
-                    <h3>Günlük K/Z</h3>
-                    <p className="loss">-420,00 ₺</p>
-                </div>
-
-                <div className="portfolio-kpi">
-                    <h3>Nakit (Sanal)</h3>
-                    <p>7.495,00 ₺</p>
-                </div>
-            </div>
-
-            <section className="card">
-                <div className="portfolio-actions">
-                    <select>
-                        <option>Tüm Varlıklar</option>
-                        <option>Hisse</option>
-                        <option>Döviz</option>
-                        <option>Altın</option>
-                        <option>Kripto</option>
-                    </select>
-
-                    <button>Yeni İşlem</button>
-                    <button>İşlem Geçmişi</button>
-                </div>
-
-                {portfolio.length === 0 ? (
-                    <p>Portföy boş veya veri yükleniyor...</p>
-                ) : (
-                    <table>
-                        <thead>
-                        <tr>
-                            <th>Varlık</th>
-                            <th>Adet</th>
-                            <th>Ortalama Maliyet</th>
-                            <th>Güncel Fiyat</th>
-                            <th>Değer</th>
-                            <th>K/Z</th>
-                        </tr>
-                        </thead>
-
-                        <tbody>
-                        {portfolio.map((asset, index) => (
-                            <tr key={index}>
-                                <td>
-                                    <strong>{asset.symbol}</strong>
-                                    <br />
-                                    <span className="muted">{asset.name}</span>
-                                </td>
-                                <td>{asset.quantity}</td>
-                                <td>{formatCurrency(asset.averagePrice)}</td>
-                                <td>{formatCurrency(asset.currentPrice)}</td>
-                                <td>{formatCurrency(asset.totalValue)}</td>
-                                <td className={asset.profitLoss >= 0 ? "profit" : "loss"}>
-                                    {formatCurrency(asset.profitLoss)}
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                )}
-            </section>
-        </>
-    );
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useApi } from '../useApi.js';
+import { api } from '../api.js';
+export default function Portfolio() {
+    const portfolio = useApi('/portfolio/me');
+    const account = useApi('/accounts/me');
+    const transactions = useApi('/transactions/me');
+    const [notice, setNotice] = useState('');
+    const [pending, setPending] = useState(false);
+    async function requestBalance(event) {
+        event.preventDefault(); if (pending) return;
+        const form = event.currentTarget;
+        const requestedAmount = new FormData(form).get('amount');
+        setPending(true); setNotice('');
+        try {
+            await api('/balance-requests', { method: 'POST', body: { requestedAmount } });
+            setNotice('Bakiye talebiniz yönetici onayına gönderildi.'); form.reset();
+        } catch (error) { setNotice(error.message); }
+        finally { setPending(false); }
+    }
+    return <><h1>Portföyüm</h1>
+        {[portfolio, account, transactions].some(r => r.loading) && <p>Yükleniyor…</p>}
+        {[portfolio, account, transactions].filter(r => r.error).map((r, index) => <p role="alert" key={index}>{r.error}</p>)}
+        <section className="card"><h2>Sanal hesap</h2><p>Bakiye: {account.data?.balance ?? '—'} ₺</p>
+            <form onSubmit={requestBalance}><label>Talep tutarı<input name="amount" type="number" min="0.0000000000000001" step="any" required /></label>
+                <button className="btn" disabled={pending}>Bakiye talep et</button></form>
+            {notice && <p role="status">{notice}</p>}
+        </section>
+        <section className="card"><h2>Varlıklarım</h2><Link to="/trade">Yeni işlem</Link>
+            {portfolio.data?.length === 0 && <p>Portföyünüz boş.</p>}
+            <table><thead><tr><th>Sembol</th><th>Miktar</th><th>Ortalama maliyet</th><th>Güncel fiyat</th><th>Değer</th><th>Kâr/Zarar</th></tr></thead>
+                <tbody>{portfolio.data?.map(asset => <tr key={asset.symbol}><td>{asset.symbol}</td><td>{asset.quantity}</td>
+                    <td>{asset.averagePrice}</td><td>{asset.currentPrice}</td><td>{asset.totalValue}</td><td>{asset.profitLoss}</td></tr>)}</tbody>
+            </table>
+        </section><section className="card"><h2>İşlem geçmişim</h2>
+            {transactions.data?.length === 0 && <p>Henüz işlem yapmadınız.</p>}
+            <table><thead><tr><th>Tür</th><th>Sembol</th><th>Miktar</th><th>Toplam</th><th>Tarih</th></tr></thead>
+                <tbody>{transactions.data?.map(t => <tr key={t.id}><td>{t.type}</td><td>{t.instrumentSymbol}</td>
+                    <td>{t.quantity}</td><td>{t.totalAmount}</td><td>{t.transactionTime}</td></tr>)}</tbody>
+            </table>
+        </section></>;
 }
-
-export default Portfolio;
