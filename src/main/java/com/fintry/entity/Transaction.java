@@ -20,15 +20,16 @@ public class Transaction {
     private Long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TransactionType type;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 44, scale = 8)
     private BigDecimal quantity;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 44, scale = 8)
     private BigDecimal price;
 
-    @Column(name = "total_amount", nullable = false)
+    @Column(name = "total_amount", nullable = false, precision = 52, scale = 16)
     private BigDecimal totalAmount;
 
     @Column(name = "transaction_time", nullable = false)

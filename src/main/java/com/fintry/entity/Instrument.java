@@ -27,6 +27,6 @@ public class Instrument {
     @Column(nullable = false)
     private String type; // STOCK, FOREX, GOLD
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 44, scale = 8)
     private BigDecimal price; // güncel fiyat
 }

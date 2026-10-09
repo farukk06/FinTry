@@ -12,7 +12,6 @@ import com.fintry.exception.InsufficientAssetException;
 import com.fintry.dto.TransactionResponse;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,39 +23,43 @@ public class TransactionService {
     private final InstrumentRepository instrumentRepository;
     private final VirtualAccountRepository virtualAccountRepository;
     private final PortfolioAssetRepository portfolioAssetRepository;
+    private final FinancialLocks financialLocks;
 
     public TransactionService(TransactionRepository transactionRepository,
                               UserRepository userRepository,
                               InstrumentRepository instrumentRepository,
                               VirtualAccountRepository virtualAccountRepository,
-                              PortfolioAssetRepository portfolioAssetRepository) {
+                              PortfolioAssetRepository portfolioAssetRepository,
+                              FinancialLocks financialLocks) {
         this.transactionRepository = transactionRepository;
         this.userRepository = userRepository;
         this.instrumentRepository = instrumentRepository;
         this.virtualAccountRepository = virtualAccountRepository;
         this.portfolioAssetRepository = portfolioAssetRepository;
+        this.financialLocks = financialLocks;
     }
 
     @Transactional
     public TransactionResponse buy(TradeRequest request) {
+        FinancialPolicy.quantity(request.getQuantity());
+        financialLocks.configureTimeout();
+        VirtualAccount account = virtualAccountRepository.findByUserIdForUpdate(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 
-        VirtualAccount account = virtualAccountRepository.findByUserId(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
-
-        BigDecimal quantity = request.getQuantity();
-        BigDecimal price = instrument.getPrice();
-        BigDecimal totalAmount = price.multiply(quantity);
+        BigDecimal quantity = FinancialPolicy.quantity(request.getQuantity());
+        BigDecimal price = FinancialPolicy.price(instrument.getPrice());
+        BigDecimal totalAmount = FinancialPolicy.total(price, quantity);
 
         if (account.getBalance().compareTo(totalAmount) < 0) {
             throw new InsufficientBalanceException("Insufficient balance");
         }
 
-        account.setBalance(account.getBalance().subtract(totalAmount));
+        account.setBalance(FinancialPolicy.balance(account.getBalance().subtract(totalAmount)));
 
         PortfolioAsset asset = portfolioAssetRepository
                 .findByUserIdAndInstrumentId(request.getUserId(), request.getInstrumentId())
@@ -72,14 +75,12 @@ public class TransactionService {
         } else {
             BigDecimal oldQuantity = asset.getQuantity();
             BigDecimal oldAveragePrice = asset.getAveragePrice();
-            BigDecimal newQuantity = oldQuantity.add(quantity);
+            BigDecimal newQuantity = FinancialPolicy.quantity(oldQuantity.add(quantity));
 
             BigDecimal oldTotal = oldQuantity.multiply(oldAveragePrice);
             BigDecimal newTotal = quantity.multiply(price);
 
-            BigDecimal newAveragePrice = oldTotal
-                    .add(newTotal)
-                    .divide(newQuantity, 2, RoundingMode.HALF_UP);
+            BigDecimal newAveragePrice = FinancialPolicy.average(oldTotal.add(newTotal), newQuantity);
 
             asset.setQuantity(newQuantity);
             asset.setAveragePrice(newAveragePrice);
@@ -105,27 +106,28 @@ public class TransactionService {
 
     @Transactional
     public TransactionResponse sell(TradeRequest request) {
+        FinancialPolicy.quantity(request.getQuantity());
+        financialLocks.configureTimeout();
+        VirtualAccount account = virtualAccountRepository.findByUserIdForUpdate(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Instrument instrument = instrumentRepository.findById(request.getInstrumentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 
-        VirtualAccount account = virtualAccountRepository.findByUserId(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found"));
-
         PortfolioAsset asset = portfolioAssetRepository
                 .findByUserIdAndInstrumentId(request.getUserId(), request.getInstrumentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio asset not found"));
 
-        BigDecimal quantity = request.getQuantity();
-        BigDecimal price = instrument.getPrice();
+        BigDecimal quantity = FinancialPolicy.quantity(request.getQuantity());
+        BigDecimal price = FinancialPolicy.price(instrument.getPrice());
 
         if (asset.getQuantity().compareTo(quantity) < 0) {
             throw new InsufficientAssetException("Insufficient asset quantity");
         }
 
-        BigDecimal totalAmount = price.multiply(quantity);
+        BigDecimal totalAmount = FinancialPolicy.total(price, quantity);
         BigDecimal remainingQuantity = asset.getQuantity().subtract(quantity);
 
         if (remainingQuantity.compareTo(BigDecimal.ZERO) == 0) {
@@ -135,7 +137,7 @@ public class TransactionService {
             portfolioAssetRepository.save(asset);
         }
 
-        account.setBalance(account.getBalance().add(totalAmount));
+        account.setBalance(FinancialPolicy.balance(account.getBalance().add(totalAmount)));
         virtualAccountRepository.save(account);
 
         Transaction transaction = Transaction.builder()

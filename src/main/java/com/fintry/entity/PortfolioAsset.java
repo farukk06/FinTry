@@ -6,7 +6,8 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "portfolio_assets")
+@Table(name = "portfolio_assets", uniqueConstraints = @UniqueConstraint(
+        name = "uk_portfolio_user_instrument", columnNames = {"user_id", "instrument_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,10 +19,10 @@ public class PortfolioAsset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 44, scale = 8)
     private BigDecimal quantity;
 
-    @Column(name = "average_price", nullable = false)
+    @Column(name = "average_price", nullable = false, precision = 44, scale = 8)
     private BigDecimal averagePrice;
 
     @ManyToOne

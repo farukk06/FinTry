@@ -17,7 +17,9 @@ public class VirtualAccountController {
     }
 
     @PostMapping("/user/{userId}")
-    public VirtualAccountResponse createVirtualAccount(@PathVariable Long userId, @RequestParam BigDecimal balance) {
+    public VirtualAccountResponse createVirtualAccount(@PathVariable Long userId,
+            @RequestParam @jakarta.validation.constraints.PositiveOrZero
+            @com.fintry.validation.FinancialPrecision(money = true) BigDecimal balance) {
         return virtualAccountService.createVirtualAccount(userId, balance);
     }
 

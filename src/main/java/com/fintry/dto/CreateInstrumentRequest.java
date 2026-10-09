@@ -23,5 +23,6 @@ public class CreateInstrumentRequest {
 
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be greater than zero")
+    @com.fintry.validation.FinancialPrecision
     private BigDecimal price;
 }

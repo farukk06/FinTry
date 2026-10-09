@@ -19,5 +19,6 @@ public class TradeRequest {
 
     @NotNull(message = "Quantity is required")
     @Positive(message = "Quantity must be greater than zero")
+    @com.fintry.validation.FinancialPrecision
     private BigDecimal quantity;
 }
