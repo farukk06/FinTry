@@ -20,12 +20,13 @@ public class InstrumentService {
     }
 
     public InstrumentResponse createInstrument(CreateInstrumentRequest request) {
+        BigDecimal price = FinancialPolicy.price(request.getPrice());
 
         Instrument instrument = Instrument.builder()
                 .symbol(request.getSymbol())
                 .name(request.getName())
                 .type(request.getType())
-                .price(request.getPrice())
+                .price(price)
                 .build();
 
         Instrument savedInstrument = instrumentRepository.save(instrument);
@@ -41,6 +42,7 @@ public class InstrumentService {
     }
 
     public InstrumentResponse updateInstrumentPrice(Long id, BigDecimal newPrice) {
+        newPrice = FinancialPolicy.price(newPrice);
         Instrument instrument = instrumentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Instrument not found"));
 

@@ -29,12 +29,12 @@ public class PortfolioService {
             BigDecimal averagePrice = asset.getAveragePrice();
 
             BigDecimal totalValue =
-                    quantity.multiply(currentPrice);
+                    FinancialPolicy.total(currentPrice, quantity);
 
             BigDecimal profitLoss =
-                    currentPrice
+                    FinancialPolicy.decimal(currentPrice
                             .subtract(averagePrice)
-                            .multiply(quantity);
+                            .multiply(quantity), true);
 
             return PortfolioResponse.builder()
                     .symbol(asset.getInstrument().getSymbol())

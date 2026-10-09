@@ -34,7 +34,8 @@ public class InstrumentController {
     @PutMapping("/{id}/price")
     public InstrumentResponse updateInstrumentPrice(
             @PathVariable Long id,
-            @RequestParam BigDecimal price) {
+            @RequestParam @jakarta.validation.constraints.Positive
+            @com.fintry.validation.FinancialPrecision BigDecimal price) {
 
         return instrumentService.updateInstrumentPrice(id, price);
     }

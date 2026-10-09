@@ -16,5 +16,6 @@ public class CreateBalanceRequest {
 
     @NotNull(message = "Requested amount is required")
     @Positive(message = "Requested amount must be greater than zero")
+    @com.fintry.validation.FinancialPrecision(money = true)
     private BigDecimal requestedAmount;
 }

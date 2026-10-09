@@ -10,6 +10,7 @@ import com.fintry.exception.ResourceNotFoundException;
 import com.fintry.dto.VirtualAccountResponse;
 
 import java.math.BigDecimal;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class VirtualAccountService {
@@ -22,7 +23,9 @@ public class VirtualAccountService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public VirtualAccountResponse createVirtualAccount(Long userId, BigDecimal balance) {
+        balance = FinancialPolicy.balance(balance);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
@@ -42,6 +45,7 @@ public class VirtualAccountService {
         return toResponse(savedAccount);
     }
 
+    @Transactional(readOnly = true)
     public VirtualAccountResponse getByUserId(Long userId) {
 
         VirtualAccount account = virtualAccountRepository.findByUserId(userId)
