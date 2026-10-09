@@ -41,7 +41,7 @@ class MigrationTests extends PostgreSqlTestSupport {
 
     @Test void freshDatabaseMigratesWithExpectedPrecision() {
         Database db = database("latest");
-        assertThat(db.flyway().info().current().getVersion().toString()).isEqualTo("2");
+        assertThat(db.flyway().info().current().getVersion().toString()).isEqualTo("3");
         assertThat(db.jdbc().queryForObject("select numeric_scale from information_schema.columns where table_schema=current_schema() and table_name='transactions' and column_name='quantity'", Integer.class)).isEqualTo(8);
         assertThat(db.jdbc().queryForObject("select numeric_precision from information_schema.columns where table_schema=current_schema() and table_name='virtual_accounts' and column_name='balance'", Integer.class)).isEqualTo(52);
         assertThatCode(() -> new FinancialSchemaVerifier(db.jdbc()).afterPropertiesSet()).doesNotThrowAnyException();

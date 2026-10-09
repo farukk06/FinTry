@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import org.springframework.dao.DataIntegrityViolationException;
 import static org.assertj.core.api.Assertions.*;
 
+@org.springframework.security.test.context.support.WithMockUser(username="1", roles="ADMIN")
 @SpringBootTest
 class FinancialCoreTests extends PostgreSqlTestSupport {
     @Autowired UserRepository users;
@@ -220,7 +221,10 @@ class FinancialCoreTests extends PostgreSqlTestSupport {
         CreateBalanceRequest request = new CreateBalanceRequest();
         request.setUserId(999999L);
         request.setRequestedAmount(BigDecimal.ONE);
+        var context = org.springframework.security.core.context.SecurityContextHolder.getContext();
+        context.setAuthentication(org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated("999999", "", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
         assertThatThrownBy(() -> balanceRequests.createRequest(request)).isInstanceOf(ResourceNotFoundException.class);
+        context.setAuthentication(org.springframework.security.authentication.UsernamePasswordAuthenticationToken.authenticated(userId.toString(), "", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
         request.setUserId(userId);
         request.setRequestedAmount(new BigDecimal("-1"));
         assertThatThrownBy(() -> balanceRequests.createRequest(request)).isInstanceOf(InvalidFinancialValueException.class);
@@ -237,7 +241,7 @@ class FinancialCoreTests extends PostgreSqlTestSupport {
         if (lockedTable != null && !List.of("virtual_accounts", "balance_requests").contains(lockedTable)) {
             throw new IllegalArgumentException("Unknown test lock target");
         }
-        ExecutorService executor = Executors.newFixedThreadPool(operations.length);
+        ExecutorService executor = new org.springframework.security.concurrent.DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(operations.length));
         CountDownLatch ready = new CountDownLatch(operations.length);
         CountDownLatch start = new CountDownLatch(1);
         try (Connection blocker = dataSource.getConnection()) {

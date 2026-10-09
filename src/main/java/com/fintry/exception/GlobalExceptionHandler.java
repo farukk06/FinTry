@@ -18,6 +18,19 @@ import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> authentication(Exception ex) {
+        return error(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    }
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> forbidden(Exception ex) {
+        return error(HttpStatus.FORBIDDEN, "Access denied");
+    }
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> rateLimited(org.springframework.web.server.ResponseStatusException ex) {
+        return error(HttpStatus.valueOf(ex.getStatusCode().value()), ex.getReason());
+    }
+
 
     @ExceptionHandler(InvalidFinancialValueException.class)
     public ResponseEntity<ErrorResponse> handleFinancialValue(InvalidFinancialValueException ex) {

@@ -1,4 +1,8 @@
 HELP.md
+work/
+.env
+*.pem
+*.key
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

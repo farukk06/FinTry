@@ -12,6 +12,9 @@ import java.util.List;
 @RequestMapping("/transactions")
 public class TransactionController {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.fintry.security.AccountAccess access;
+
     private final TransactionService transactionService;
 
     public TransactionController(TransactionService transactionService) {
@@ -19,14 +22,17 @@ public class TransactionController {
     }
 
     @PostMapping("/buy")
-    public TransactionResponse buy(@Valid @RequestBody TradeRequest request) {
-        return transactionService.buy(request);
+    public TransactionResponse buy(@Valid @RequestBody com.fintry.dto.TradeCommand command) {
+        return transactionService.buy(TradeRequest.builder().userId(access.userId()).instrumentId(command.instrumentId()).quantity(command.quantity()).build());
     }
 
     @PostMapping("/sell")
-    public TransactionResponse sell(@Valid @RequestBody TradeRequest request) {
-        return transactionService.sell(request);
+    public TransactionResponse sell(@Valid @RequestBody com.fintry.dto.TradeCommand command) {
+        return transactionService.sell(TradeRequest.builder().userId(access.userId()).instrumentId(command.instrumentId()).quantity(command.quantity()).build());
     }
+
+    @GetMapping("/me")
+    public List<TransactionResponse> me() { return transactionService.getTransactionsByUserId(access.userId()); }
 
     @GetMapping("/user/{userId}")
     public List<TransactionResponse> getTransactionsByUserId(@PathVariable Long userId) {
