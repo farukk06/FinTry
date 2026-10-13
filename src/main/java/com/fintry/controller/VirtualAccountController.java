@@ -4,11 +4,13 @@ import com.fintry.dto.VirtualAccountResponse;
 import com.fintry.service.VirtualAccountService;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/accounts")
 public class VirtualAccountController {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.fintry.security.AccountAccess access;
 
     private final VirtualAccountService virtualAccountService;
 
@@ -16,12 +18,8 @@ public class VirtualAccountController {
         this.virtualAccountService = virtualAccountService;
     }
 
-    @PostMapping("/user/{userId}")
-    public VirtualAccountResponse createVirtualAccount(@PathVariable Long userId,
-            @RequestParam @jakarta.validation.constraints.PositiveOrZero
-            @com.fintry.validation.FinancialPrecision(money = true) BigDecimal balance) {
-        return virtualAccountService.createVirtualAccount(userId, balance);
-    }
+    @GetMapping("/me")
+    public VirtualAccountResponse me() { return virtualAccountService.getByUserId(access.userId()); }
 
     @GetMapping("/user/{userId}")
     public VirtualAccountResponse getAccountByUserId(@PathVariable Long userId) {

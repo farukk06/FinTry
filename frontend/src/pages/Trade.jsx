@@ -1,100 +1,30 @@
-import { useEffect, useState } from "react";
-
-function Trade() {
-    const [instruments, setInstruments] = useState([]);
-    const [selectedInstrumentId, setSelectedInstrumentId] = useState("");
-    const [quantity, setQuantity] = useState("");
-
-    const loadData = () => {
-        fetch("http://localhost:8080/instruments")
-            .then((response) => response.json())
-            .then((data) => setInstruments(data))
-            .catch((error) => console.error(error));
-    };
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const handleTrade = (type) => {
-        if (!selectedInstrumentId || !quantity) {
-            alert("Lütfen enstrüman ve miktar seç.");
-            return;
-        }
-
-        fetch(`http://localhost:8080/transactions/${type}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                userId: 1,
-                instrumentId: Number(selectedInstrumentId),
-                quantity: Number(quantity),
-            }),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("İşlem başarısız oldu.");
-                }
-                return response.json();
-            })
-            .then(() => {
-                alert(
-                    type === "buy"
-                        ? "Alım işlemi başarılı."
-                        : "Satım işlemi başarılı."
-                );
-                setQuantity("");
-            })
-            .catch((error) => {
-                alert(error.message);
-            });
-    };
-
-    return (
-        <>
-            <h1>Buy / Sell</h1>
-
-            <section className="card trade-card">
-                <div className="trade-form">
-                    <select
-                        value={selectedInstrumentId}
-                        onChange={(e) => setSelectedInstrumentId(e.target.value)}
-                    >
-                        <option value="">Select Instrument</option>
-
-                        {instruments.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.symbol} - {item.name}
-                            </option>
-                        ))}
-                    </select>
-
-                    <input
-                        type="number"
-                        placeholder="Quantity"
-                        value={quantity}
-                        onChange={(e) => setQuantity(e.target.value)}
-                    />
-
-                    <button
-                        className="buy-btn"
-                        onClick={() => handleTrade("buy")}
-                    >
-                        Buy
-                    </button>
-
-                    <button
-                        className="sell-btn"
-                        onClick={() => handleTrade("sell")}
-                    >
-                        Sell
-                    </button>
-                </div>
-            </section>
-        </>
-    );
+import { useState } from 'react';
+import { useApi } from '../useApi.js';
+import { api } from '../api.js';
+export default function Trade() {
+    const { data: instruments, error, loading } = useApi('/instruments');
+    const [instrumentId, setInstrumentId] = useState('');
+    const [quantity, setQuantity] = useState('');
+    const [pending, setPending] = useState(false);
+    const [notice, setNotice] = useState('');
+    async function trade(type) {
+        if (pending) return;
+        if (!instrumentId || !quantity || Number(quantity) <= 0) { setNotice('Enstrüman ve pozitif miktar seçin.'); return; }
+        setPending(true); setNotice('');
+        try {
+            await api(`/transactions/${type}`, { method: 'POST', body: { instrumentId: Number(instrumentId), quantity } });
+            setNotice(type === 'buy' ? 'Alım tamamlandı.' : 'Satış tamamlandı.'); setQuantity('');
+        } catch (failure) { setNotice(failure.message); }
+        finally { setPending(false); }
+    }
+    return <><h1>Alım-Satım</h1><section className="card trade-form">
+        {loading && <p>Yükleniyor…</p>}{error && <p role="alert">{error}</p>}
+        <label>Enstrüman<select value={instrumentId} onChange={e => setInstrumentId(e.target.value)} disabled={pending}>
+            <option value="">Enstrüman seçin</option>{instruments?.map(i => <option key={i.id} value={i.id}>{i.symbol} — {i.name}</option>)}
+        </select></label>
+        <label>Miktar<input type="number" min="0.00000001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} disabled={pending} /></label>
+        <button className="btn" disabled={pending || loading || !!error} onClick={() => trade('buy')}>Al</button>
+        <button className="btn" disabled={pending || loading || !!error} onClick={() => trade('sell')}>Sat</button>
+        {notice && <p role="status">{notice}</p>}
+    </section></>;
 }
-
-export default Trade;

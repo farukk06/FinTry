@@ -24,6 +24,7 @@ public class VirtualAccountService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public VirtualAccountResponse createVirtualAccount(Long userId, BigDecimal balance) {
         balance = FinancialPolicy.balance(balance);
         User user = userRepository.findById(userId)
@@ -46,6 +47,7 @@ public class VirtualAccountService {
     }
 
     @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#userId)")
     public VirtualAccountResponse getByUserId(Long userId) {
 
         VirtualAccount account = virtualAccountRepository.findByUserId(userId)

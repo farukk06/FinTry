@@ -40,6 +40,7 @@ public class TransactionService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#request.userId)")
     public TransactionResponse buy(TradeRequest request) {
         FinancialPolicy.quantity(request.getQuantity());
         financialLocks.configureTimeout();
@@ -105,6 +106,7 @@ public class TransactionService {
     }
 
     @Transactional
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#request.userId)")
     public TransactionResponse sell(TradeRequest request) {
         FinancialPolicy.quantity(request.getQuantity());
         financialLocks.configureTimeout();
@@ -155,6 +157,7 @@ public class TransactionService {
         return toResponse(savedTransaction);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#userId)")
     public List<TransactionResponse> getTransactionsByUserId(Long userId) {
         return transactionRepository.findByUserId(userId)
                 .stream()

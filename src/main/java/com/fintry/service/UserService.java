@@ -18,6 +18,7 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("denyAll()")
     public UserResponse createUser(CreateUserRequest request) {
 
         User user = User.builder()
@@ -31,6 +32,7 @@ public class UserService {
         return toResponse(savedUser);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll()
                 .stream()

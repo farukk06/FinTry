@@ -12,6 +12,15 @@ public abstract class PostgreSqlTestSupport {
             .withPassword("isolated_test_only")
             .withReuse(false);
 
+    private static final java.security.KeyPair KEYS = keys();
+    private static java.security.KeyPair keys() {
+        try {
+            var generator = java.security.KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            return generator.generateKeyPair();
+        } catch (Exception ex) { throw new IllegalStateException(ex); }
+    }
+
     static {
         POSTGRES.start();
     }
@@ -25,5 +34,7 @@ public abstract class PostgreSqlTestSupport {
         properties.add("spring.flyway.enabled", () -> "true");
         properties.add("spring.jpa.show-sql", () -> "false");
         properties.add("server.port", () -> "0");
+        properties.add("fintry.security.jwt.private-key", () -> java.util.Base64.getEncoder().encodeToString(KEYS.getPrivate().getEncoded()));
+        properties.add("fintry.security.jwt.public-key", () -> java.util.Base64.getEncoder().encodeToString(KEYS.getPublic().getEncoded()));
     }
 }

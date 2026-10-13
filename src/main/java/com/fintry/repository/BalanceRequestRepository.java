@@ -8,6 +8,8 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 public interface BalanceRequestRepository extends JpaRepository<BalanceRequest, Long> {
+    java.util.List<BalanceRequest> findByUserId(Long userId);
+    java.util.List<BalanceRequest> findByStatus(com.fintry.entity.BalanceRequestStatus status);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from BalanceRequest r where r.id = :id")
     Optional<BalanceRequest> findByIdForUpdate(Long id);

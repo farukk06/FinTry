@@ -10,11 +10,17 @@ import java.util.List;
 @RequestMapping("/portfolio")
 public class PortfolioController {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.fintry.security.AccountAccess access;
+
     private final PortfolioService portfolioService;
 
     public PortfolioController(PortfolioService portfolioService) {
         this.portfolioService = portfolioService;
     }
+
+    @GetMapping("/me")
+    public List<PortfolioResponse> me() { return portfolioService.getUserPortfolio(access.userId()); }
 
     @GetMapping("/user/{userId}")
     public List<PortfolioResponse> getUserPortfolio(@PathVariable Long userId) {

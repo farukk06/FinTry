@@ -19,6 +19,7 @@ public class InstrumentService {
         this.instrumentRepository = instrumentRepository;
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public InstrumentResponse createInstrument(CreateInstrumentRequest request) {
         BigDecimal price = FinancialPolicy.price(request.getPrice());
 
@@ -34,6 +35,7 @@ public class InstrumentService {
         return toResponse(savedInstrument);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     public List<InstrumentResponse> getAllInstruments() {
         return instrumentRepository.findAll()
                 .stream()
@@ -41,6 +43,7 @@ public class InstrumentService {
                 .toList();
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public InstrumentResponse updateInstrumentPrice(Long id, BigDecimal newPrice) {
         newPrice = FinancialPolicy.price(newPrice);
         Instrument instrument = instrumentRepository.findById(id)

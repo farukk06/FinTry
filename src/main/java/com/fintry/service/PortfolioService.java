@@ -17,6 +17,7 @@ public class PortfolioService {
         this.portfolioAssetRepository = portfolioAssetRepository;
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("@accountAccess.owns(#userId)")
     public List<PortfolioResponse> getUserPortfolio(Long userId) {
 
         List<PortfolioAsset> assets =
