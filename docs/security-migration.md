@@ -86,6 +86,7 @@ mekanizmasıyla şu değişkenler sağlanır; testler bunları izole değerlerle
 | FINTRY_JWT_PRIVATE_KEY | RSA PKCS8 DER, standard Base64; secret |
 | FINTRY_JWT_PUBLIC_KEY | eşleşen RSA X509 DER, standard Base64 |
 | FINTRY_FRONTEND_ORIGINS | virgülle ayrılmış exact origin listesi |
+| FINTRY_TRUSTED_PROXIES | varsayılan boş; virgülle ayrılmış exact literal proxy IP adresleri |
 | VITE_API_URL | frontend build sırasında API URL |
 
 RSA anahtarları güvenli makinede CSPRNG ile en az 2048 bit üretilir; bu release
@@ -98,10 +99,39 @@ proxy ayarları hosting ortamında uygulanmalıdır.
 
 - Access token 15 dakika; refresh yok. Çıkış yalnız istemcidedir. Hesabı kapatmak
   sonraki istekte token kullanımını durdurur; devam eden transaction'ı iptal etmez.
-- Auth limiter tek instance belleğindedir, restart'ta sıfırlanır. Çok node ve
-  reverse proxy için ortak gateway limiter gereklidir.
+- Auth limiter tek instance belleğindedir, restart'ta sıfırlanır. Login 10/IP/dakika,
+  register ayrı 5/IP/dakika ve toplam 30/instance/dakika sınırına tabidir. Kayıt
+  sonucunun 201/409 farkı sürer; enumeration azaltılmıştır, tamamen kapatılmamıştır.
+  Çok node'da ortak gateway/Redis limiter ve kapasite/DoS politikası deployment
+  ön koşuludur; bu release ortak altyapı kurmaz veya böyle bir garanti vermez.
 - Kaynak dosyada eskiden bulunan DB parolası kaldırılmıştır; git geçmişinden
   silinmiş sayılmaz. Gerçek parola yerelde ayrıca rotate edilmelidir.
 - Finansal idempotency eklenmedi; otomatik write retry yapılmaz.
 - V3 geri alınırken kullanıcı/finansal verilerini silen down migration yoktur.
   Uyumlu uygulama sürümü veya doğrulanmış yedekten kontrollü restore planlanır.
+
+## Proxy ve güvenli log deployment kontrolü
+
+- Direct deployment'ta FINTRY_TRUSTED_PROXIES boş kalır; istemci başlıkları
+  güvenilir değildir. Proxy kullanıldığında yalnız backend'e bağlanan ve zincirdeki
+  kontrol edilen proxy IP'lerini ekleyin. CIDR/wildcard/hostname kabul edilmez.
+- Backend ağ erişimini bu proxy'lerle sınırlayın. Güvenilen proxy üzerinden
+  kullanıcıların backend'e doğrudan erişmesine izin vermeyin. Her proxy istemcinin
+  X-Forwarded-For değerini overwrite etmeli veya gerçek socket peer'ini sona eklemeli.
+  Aynı trusted socket'ten gönderilen header'ın doğruluğunu uygulama tek başına kanıtlayamaz.
+- server.forward-headers-strategy=NONE kalmalı. RemoteAddr'ı önceden değiştiren
+  ForwardedHeaderFilter/RemoteIpValve eklemeyin; güven kararı gerçek socket peer'iyle yapılır.
+- İki farklı istemciyle aynı proxy üzerinden login limitlerinin bağımsız olduğunu,
+  spoof edilmiş prefix'in bütçeyi değiştirmediğini, eksik zincirin 400 olduğunu test edin.
+  NAT/shared gerçek istemci IP'si hâlâ ortak bütçe kullanır; IP kullanıcı kimliği değildir.
+- Hibernate JDBC hata/uyarı, SQL/parametre ve PostgreSQL logger'larını tekrar açmayın.
+  Hikari PGJDBC logServerErrorDetail=false ve hibernate.jdbc.log.errors/warnings=false
+  ayarlarını koruyun. Ham exception, request body, Authorization header veya DB
+  parametrelerini APM/access log'a eklemeyin. Uygulama DB hata kodu, SQLState ve
+  korelasyon UUID'si finansal teşhisi sürdürür; stack trace/SQL/parametre loglanmaz.
+- PostgreSQL sunucusunun ve harici Flyway/yönetim araçlarının logları bu uygulama
+  ayarlarından bağımsızdır. Yetkili operatör parametre loglarını kapatmalı
+  (log_parameter_max_length=0, log_parameter_max_length_on_error=0), hata DETAIL
+  satırlarında failing-row verisini önlemek için log_error_verbosity=terse politikasını
+  ve log erişim/retention ayarlarını ayrıca değerlendirmelidir. Bu görev server ayarı değiştirmez.
+- Eski DB secret rotasyonunun ayrı kontrol listesi: security-secret-rotation.md.

@@ -17,6 +17,7 @@ public class CorsConfig {
         config.setAllowedOrigins(allowed);
         config.setAllowCredentials(false);
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setExposedHeaders(List.of("X-Correlation-ID"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "OPTIONS"));
         config.setMaxAge(600L);
         var source = new UrlBasedCorsConfigurationSource();

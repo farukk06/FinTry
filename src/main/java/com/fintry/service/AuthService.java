@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.dao.DataIntegrityViolationException;
-import com.fintry.exception.BusinessRuleException;
+import com.fintry.exception.RegistrationConflictException;
 import com.fintry.exception.InvalidFinancialValueException;
 
 @Service
@@ -33,15 +33,19 @@ public class AuthService {
     public UserResponse register(@Valid RegisterRequest request) {
         checkPasswordBytes(request.password());
         final User user;
+        // Pay the same BCrypt cost before either insert success or uniqueness failure.
+        // A conflict remains an honest 409; no existing identity is modified or returned.
+        String hash = passwords.encode(request.password());
         try {
             user = users.saveAndFlush(User.builder().username(request.username()).email(normalize(request.email()))
-                    .role(Role.USER).passwordHash(passwords.encode(request.password())).enabled(true).build());
+                    .role(Role.USER).passwordHash(hash).enabled(true).build());
         } catch (DataIntegrityViolationException ex) {
             // Legacy baseline schemas may use different unique constraint names.
             for (Throwable cause=ex; cause!=null; cause=cause.getCause()) {
                 if (cause instanceof org.hibernate.exception.ConstraintViolationException violation &&
                         "23505".equals(violation.getSQLState())) {
-                    throw new BusinessRuleException("Registration could not be completed; identity may already exist");
+                    String id = com.fintry.security.SafeDatabaseErrors.record(ex, "REGISTRATION_CONFLICT");
+                    throw new RegistrationConflictException(id);
                 }
             }
             throw ex;

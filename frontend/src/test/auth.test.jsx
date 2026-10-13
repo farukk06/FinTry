@@ -43,6 +43,20 @@ it('registers without a role or balance and directs the user to login', async ()
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ username: 'newuser', email: 'new@test.example', password: 'test-password-123' });
     expect(getSession()).toBeNull();
 });
+it.each([409, 429])('keeps registration failure %s honest without success navigation or a session', async status => {
+    const user = userEvent.setup();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(response(status, { message: 'Registration could not be completed' }));
+    open('/register');
+    await user.type(screen.getByLabelText('Kullanıcı adı'), 'newuser');
+    await user.type(screen.getByLabelText('E-posta'), 'new@test.example');
+    await user.type(screen.getByLabelText('Parola', { exact: true }), 'test-password-123');
+    await user.type(screen.getByLabelText('Parola tekrar'), 'test-password-123');
+    await user.click(screen.getByRole('button', { name: 'Kayıt ol' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Registration could not be completed');
+    expect(screen.getByRole('heading', { name: 'Kayıt ol' })).toBeInTheDocument();
+    expect(screen.queryByText('Kayıt tamamlandı. Hesabınıza giriş yapabilirsiniz.')).not.toBeInTheDocument();
+    expect(getSession()).toBeNull();
+});
 it('blocks user access to the admin page before requesting management data', () => {
     setSession(login); const fetch = vi.spyOn(globalThis, 'fetch'); open('/admin');
     expect(screen.getByRole('alert')).toHaveTextContent('Bu sayfa için yetkiniz yok.'); expect(fetch).not.toHaveBeenCalled();

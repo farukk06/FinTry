@@ -96,3 +96,31 @@ POST /users ve POST /accounts/user/{userId} kapalıdır. Trade gövdesi
   metin kullanımı yeni yuvarlama kaybını önler, yanıt sözleşmesi değişmedi.
 - Finansal idempotency eklenmedi; frontend otomatik write retry yapmaz.
 - GitHub Actions workflow'u eklendi; Cloud test sonuçları hosted CI sonucu değildir.
+
+## 13 Ekim 2026 güvenlik incelemesi sonrası düzeltmeler
+
+Yukarıdaki 74 backend / 12 frontend sonucu 9 Ekim tesliminin tarihsel sonucudur.
+İnceleme sonrası mevcut testler korunarak registration bütçesi, trusted proxy
+zinciri, güvenli DB logları ve honest kayıt hataları için yeni regresyonlar eklendi.
+Toplam suite 93 backend / 14 frontend testidir; bu sayı tek başına çalıştırma sonucu değildir.
+
+- Kayıt 201/409 sözleşmesi korunur. Username/email conflict aynı genel 409 alır;
+  mevcut kimlik/parola/finansal kayıt değişmez. Frontend 409/429'da başarıya gitmez.
+  Enumeration tamamen giderilmez: ayrı 5/IP/dakika ve toplam 30/instance/dakika
+  kayıt bütçesiyle azaltılır. BCrypt iki kayıt yolunda da çalışır, sabit süre garantisi yoktur.
+- Trusted proxy literal IP allowlist, sağdan ilk untrusted hop, spoof prefix,
+  malformed/missing/tekrarlanan header, IPv6 ve istemci bütçe izolasyonu test edilir.
+  Defaultta untrusted forwarded header bütçeyi değiştirmez; çok node ortak limiter yoktur.
+- Hibernate JDBC/SQL/bind ve PostgreSQL logları kısıtlanır. Uygulama yalnız code,
+  SQLState ve UUID loglar; DB hata HTTP yanıtında aynı X-Correlation-ID vardır.
+  Unit testler ham message/stack trace/parametre sızıntısını, izole DB testleri
+  duplicate kullanıcı ve failing-user-row hash/finansal constraint yollarını kontrol eder.
+- Yerel ortamda Docker daemon erişilebilir değildir; başlatılmadı. Testcontainers
+  suite yerelde çalıştırılmış sayılmaz. DB gerektirmeyen Maven testleri ve frontend
+  test/lint/build çalıştırılır; tam izole regresyon için branch CI sonucu ayrıca doğrulanır.
+  Yerel seçili Maven test sonucu: 19 başarılı, 0 failure/error/skipped. Frontend:
+  14 test başarılı, ESLint ve production build başarılı. Maven ilk offline denemesi
+  eksik Surefire provider nedeniyle, Vitest ilk sandbox denemesi temp rename izni
+  nedeniyle test öncesi durdu; bağımlılık/izin düzeltilerek yukarıdaki kontroller tamamlandı.
+- V1/V2/V3 migration ve JWT/sahiplik mimarisi değiştirilmedi. Gerçek fintry_db,
+  RiverGuard, gerçek secret rotasyonu ve Git history rewrite bu çalışmanın dışındadır.

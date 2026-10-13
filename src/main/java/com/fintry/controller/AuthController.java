@@ -18,14 +18,15 @@ public class AuthController {
     private final AccountAccess access;
     private final UserRepository users;
     private final LoginRateLimiter limiter;
+    private final AuthenticationClientResolver clients;
     @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
-        limiter.check(http.getRemoteAddr());
+        limiter.checkRegistration(clients.resolve(http));
         return auth.register(request);
     }
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        limiter.check(http.getRemoteAddr());
+        limiter.checkLogin(clients.resolve(http));
         return auth.login(request);
     }
     @GetMapping("/me")

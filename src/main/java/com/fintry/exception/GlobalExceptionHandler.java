@@ -47,27 +47,33 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({PessimisticLockingFailureException.class, jakarta.persistence.LockTimeoutException.class,
             jakarta.persistence.PessimisticLockException.class})
     public ResponseEntity<ErrorResponse> handleLockFailure(Exception ex) {
-        return error(HttpStatus.CONFLICT, "Financial operation could not acquire a lock; try again later");
+        String id = com.fintry.security.SafeDatabaseErrors.record(ex, "FINANCIAL_LOCK_CONFLICT");
+        return error(HttpStatus.CONFLICT, "Financial operation could not acquire a lock; try again later", id);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleIntegrityFailure(DataIntegrityViolationException ex) {
+        String id = com.fintry.security.SafeDatabaseErrors.record(ex, "FINANCIAL_INTEGRITY_FAILURE");
         for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
             if (cause instanceof org.hibernate.exception.ConstraintViolationException violation) {
                 String name = violation.getConstraintName();
                 if ("uk_virtual_account_user".equals(name) || "uk_portfolio_user_instrument".equals(name)) {
-                    return error(HttpStatus.CONFLICT, "A record already exists for this user");
+                    return error(HttpStatus.CONFLICT, "A record already exists for this user", id);
                 }
             }
         }
         // An unexpected DB failure is not a client validation error. Do not expose SQL/credentials.
-        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unexpected financial integrity failure", ex);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Financial operation could not be completed");
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Financial operation could not be completed", id);
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(new ErrorResponse(LocalDateTime.now(),
                 status.value(), status.getReasonPhrase(), message));
+    }
+
+    private ResponseEntity<ErrorResponse> error(HttpStatus status, String message, String correlationId) {
+        return ResponseEntity.status(status).header("X-Correlation-ID", correlationId)
+                .body(new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message));
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -115,6 +121,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<ErrorResponse> handleBusinessRule(
             BusinessRuleException ex) {
+
+        if (ex instanceof RegistrationConflictException conflict)
+            return error(HttpStatus.CONFLICT, conflict.getMessage(), conflict.getCorrelationId());
 
         ErrorResponse response = new ErrorResponse(
                 LocalDateTime.now(),
